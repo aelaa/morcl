@@ -23,7 +23,7 @@
 
 (def dict
   (do
-    (if-not (.exists (io/as-file "data/odict2.csv"))
+    (if-not (.exists (io/as-file "data/odict.min.csv"))
       (clean-dict))
     (with-open [reader (io/reader "data/odict.min.csv")]
       (doall
@@ -41,27 +41,58 @@
     (str/join "\n" coll)))
 
 (defn -words-only [line]
-  (into [(first line)] (subvec line 2)))
+  (into [(first line)]
+        (subvec line 2)))
 
 (defn -find-word [word]
   ; Hidden Markov Model on opencorpora
   (first
-    (filter (fn[x](some #(= (-> word
-                                (str/lower-case)
-                                (str/replace #"ё" "е"))
-                            (str/lower-case %))
-                        (-words-only x)))
+    (filter (fn[x](some
+                    #(= (-> word
+                            (str/lower-case)
+                            (str/replace #"ё" "е"))
+                        (str/lower-case %))
+                    (-words-only x)))
             dict)))
 
 (defn -init-word [word-line]
   (first word-line))
 
+(defn -pos-convert [code]
+  (case code
+    "с" "S"
+    "со" "S"
+    "м" "S"
+    "ж" "S"
+    "мо" "S"
+    "жо" "S"
+    "п" "A"
+    "союз" "CONJ"
+    "предл." "PR"
+    "мс-п" "PR"
+    "межд." "ADV"
+    "част." "ADV"
+    "вводн." "ADV"
+    "предик." "ADV"
+    "н" "ADV"
+    "сравн." "ADV"
+    "св-нсв" "V"
+    "св" "V"
+    "нсв" "V"
+    "NI"
+    ))
+
 (defn -pos [word-line]
-  (or (second word-line) "NI"))
+  (-pos-convert (second word-line)))
 
 (defn -process-word [word]
   (let [word-line (-find-word word)]
-    (str word "{" (or (-init-word word-line) word) "=" (-pos word-line) "}")))
+    (str word
+         "{"
+         (or (-init-word word-line) word)
+         "="
+         (-pos word-line)
+         "}")))
 
 (defn -process-line [string]
   (apply str
