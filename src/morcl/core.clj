@@ -45,7 +45,6 @@
         (subvec line 2)))
 
 (defn -find-word [word]
-  ; Hidden Markov Model on opencorpora
   (first
     (filter (fn[x](some
                     #(= (-> word
@@ -87,6 +86,7 @@
 
 (defn -process-word [word]
   (let [word-line (-find-word word)]
+    ; Hidden Markov Model on opencorpora
     (str word
          "{"
          (or (-init-word word-line) word)
